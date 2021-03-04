@@ -1,0 +1,5 @@
+{
+    "command1": "echo hello",
+    "command2": "echo hello2",
+    "uptime": "uptime"
+}

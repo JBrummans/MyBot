@@ -6,9 +6,9 @@ import time
 import os
 from dotenv import load_dotenv
 from discord.ext.commands import CommandNotFound
-import re
 import subprocess
 from requests import get
+from pretty_help import PrettyHelp
 
 # requests.get('https://complimentr.com/api')).json()['compliment']
 
@@ -20,15 +20,20 @@ with open('commands.json') as command_json:
 
 bot = commands.Bot(
     command_prefix=os.getenv("PREFIX"),
-    owner_id=os.getenv("OWNER_ID"),
+    owner_id=int(os.getenv("OWNER_ID")),
     case_insensitive=True,
-    help_command=None
+    help_command=PrettyHelp()
 )
 owner_id=os.getenv("OWNER_ID")
 
+""" Owner Check """
+async def cog_check(self, ctx):
+    # Making sure author of these commands is the bot owner
+    return await ctx.bot.is_owner(ctx.author)
+
 @bot.event
 async def on_ready():
-  print('We have logged in as {0.user}'.format(bot))
+  print('MyBot has logged with username: {0.user}'.format(bot))
   embed=discord.Embed(
     title = "MyBot is Online!", 
     description = "MyBot has successfully started", 
@@ -42,35 +47,59 @@ async def on_ready():
   user = await bot.fetch_user(owner_id)
   await user.send(embed=embed)
 
+""" Error Check """
+async def cog_command_error(ctx, error):
+  # Handling any errors within commands
+  print(ctx.command.qualified_name)
+  embed = discord.Embed(
+      title=f"Error in { ctx.command.qualified_name }",
+      colour=discord.Color.red(),
+      description=dedent(f"""
+          { error }
+          Use `{ self.bot.command_prefix }help { ctx.command.qualified_name }` for help with the command.
+          """)
+  )
+  return await ctx.send(embed=embed)
+
 @bot.event
 async def on_command_error(ctx, error):
-    if isinstance(error, CommandNotFound):
+  if isinstance(error, CommandNotFound):
+    #There has to be a better way of doing this...
+    # commandRun = re.findall(r'"([^"]*)"', str(error))
+    # commandRun = commandRun[0]
+    
+    #Below command will list out all ctx attributes
+    # dir(ctx)
 
-      #There has to be a better way of doing this...
-      commandRun = re.findall(r'"([^"]*)"', str(error))
-      commandRun = commandRun[0]
+    #The better way
+    commandRun = ctx.message.content.split(" ")[0][1:]
+    for command, value in command_list.items():
+      if str(command) == commandRun:
+        # print("match found "+ command)
+        # print(value)
+        output = subprocess.getoutput(value)
+        # print(output)
+        embed=discord.Embed(
+          title = "Command Run: '" + command + "'", 
+          description = output, 
+          color = discord.Color.green()
+        )
+        return await ctx.send(embed=embed)
 
-      for command, value in command_list.items():
+    # print("Did not match " + command)
+    embed=discord.Embed(
+      title = "No Command Found", 
+      description = "Did not match " + command + ". Commands include: " + str(command_list), 
+      color = discord.Color.red()
+    )
+    return await ctx.send(embed=embed)
 
-        if str(command) == commandRun:
-          # print("match found "+ command)
-          # print(value)
-          output = subprocess.getoutput(value)
-          # print(output)
-          embed=discord.Embed(
-            title = "Command Run: '" + command + "'", 
-            description = output, 
-            color = discord.Color.green()
-          )
-          return await ctx.send(embed=embed)
-
-      # print("Did not match " + command)
-      embed=discord.Embed(
-        title = "No Command Found", 
-        description = "Did not match " + command + ". Commands include: " + str(command_list), 
-        color = discord.Color.red()
-      )
-      return await ctx.send(embed=embed)
+  embed=discord.Embed(
+    title = "Oh snap! An error occured", 
+    description = "The error was: " + error, 
+    color = discord.Color.red()
+  )
+  return await ctx.send(embed=embed)
 
 @bot.command(name='test', description="Test command")
 async def test_command(ctx):
@@ -118,4 +147,3 @@ async def systemstatus(ctx):
   return await ctx.send(embed=embed)
 
 bot.run(os.getenv("TOKEN"))
-

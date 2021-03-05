@@ -1,5 +1,3 @@
 psutil
 discord
-os
-json
-time
+discord-pretty-help

@@ -9,6 +9,9 @@ from discord.ext.commands import CommandNotFound
 import subprocess
 from requests import get
 from pretty_help import PrettyHelp
+import aiocron
+import urllib.request
+import requests
 
 # requests.get('https://complimentr.com/api')).json()['compliment']
 
@@ -61,45 +64,45 @@ async def cog_command_error(ctx, error):
   )
   return await ctx.send(embed=embed)
 
-@bot.event
-async def on_command_error(ctx, error):
-  if isinstance(error, CommandNotFound):
-    #There has to be a better way of doing this...
-    # commandRun = re.findall(r'"([^"]*)"', str(error))
-    # commandRun = commandRun[0]
+# @bot.event
+# async def on_command_error(ctx, error):
+#   if isinstance(error, CommandNotFound):
+#     #There has to be a better way of doing this...
+#     # commandRun = re.findall(r'"([^"]*)"', str(error))
+#     # commandRun = commandRun[0]
     
-    #Below command will list out all ctx attributes
-    # dir(ctx)
+#     #Below command will list out all ctx attributes
+#     # dir(ctx)
 
-    #The better way
-    commandRun = ctx.message.content.split(" ")[0][1:]
-    for command, value in command_list.items():
-      if str(command) == commandRun:
-        # print("match found "+ command)
-        # print(value)
-        output = subprocess.getoutput(value)
-        # print(output)
-        embed=discord.Embed(
-          title = "Command Run: '" + command + "'", 
-          description = output, 
-          color = discord.Color.green()
-        )
-        return await ctx.send(embed=embed)
+#     #The better way
+#     commandRun = ctx.message.content.split(" ")[0][1:]
+#     for command, value in command_list.items():
+#       if str(command) == commandRun:
+#         # print("match found "+ command)
+#         # print(value)
+#         output = subprocess.getoutput(value)
+#         # print(output)
+#         embed=discord.Embed(
+#           title = "Command Run: '" + command + "'", 
+#           description = output, 
+#           color = discord.Color.green()
+#         )
+#         return await ctx.send(embed=embed)
 
-    # print("Did not match " + command)
-    embed=discord.Embed(
-      title = "No Command Found", 
-      description = "Did not match " + command + ". Commands include: " + str(command_list), 
-      color = discord.Color.red()
-    )
-    return await ctx.send(embed=embed)
+#     # print("Did not match " + command)
+#     embed=discord.Embed(
+#       title = "No Command Found", 
+#       description = "Did not match " + command + ". Commands include: " + str(command_list), 
+#       color = discord.Color.red()
+#     )
+#     return await ctx.send(embed=embed)
 
-  embed=discord.Embed(
-    title = "Oh snap! An error occured", 
-    description = "The error was: " + error, 
-    color = discord.Color.red()
-  )
-  return await ctx.send(embed=embed)
+#   embed=discord.Embed(
+#     title = "Oh snap! An error occured", 
+#     description = "The error was: " + str(error), 
+#     color = discord.Color.red()
+#   )
+#   return await ctx.send(embed=embed)
 
 @bot.command(name='test', description="Test command")
 async def test_command(ctx):
@@ -145,5 +148,35 @@ async def systemstatus(ctx):
   embed.add_field(name="CPU", value=str(info['cpu'])+"%", inline=True)
   
   return await ctx.send(embed=embed)
+
+# CHANNEL_ID=1234
+
+# @aiocron.crontab('20 11 * * 1-5')
+# @aiocron.crontab('* * * * *')
+@bot.command(name='spaceship', description="Compares performance of Spaceship over last two days")
+async def spaceshipCheck(ctx):
+  data = json.loads(requests.get("https://newwwie.net/datasets/UNIVERSE.json").text)
+
+  length = len(data) -1
+  last = data[length]["aud_price"]
+  last2 = data[length-1]["aud_price"]
+  day = str(data[length]["date"])
+  day2 = str(data[length-1]["date"])
+  change = ((float(last) - float(last2))/float(last2)) * 100
+  rounded = round(change,2)
+  message = str("Change between " + day + " and " + day2 + " is " + str(rounded) + "%")
+  
+  embed=discord.Embed(
+    title = "Spaceship Value Change", 
+    description = message, 
+    color = discord.Color.green()
+  )
+  embed.add_field(name=day2, value=str(last2), inline=True)
+  embed.add_field(name=day, value=str(last), inline=True)
+  if change < 0:
+    embed.color =  discord.Color.red()
+
+  user = await bot.fetch_user(owner_id)
+  await user.send(embed=embed)
 
 bot.run(os.getenv("TOKEN"))

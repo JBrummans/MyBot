@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import discord
 from discord.ext import tasks, commands
 import json
@@ -34,7 +36,7 @@ async def cog_check(self, ctx):
 
 @bot.event
 async def on_ready():
-  print('MyBot has logged with username: {0.user}'.format(bot))
+  # print('MyBot has logged with username: {0.user}'.format(bot))
   embed=discord.Embed(
     title = "MyBot is Online!", 
     description = "MyBot has successfully started", 
@@ -116,10 +118,12 @@ async def my_ip(ctx):
 @bot.command(name='status', description="Host Status command")
 async def systemstatus(ctx):
   if int(ctx.author.id) == int(owner_id):
-    info={}
-    info['ram']=psutil.virtual_memory().percent
-    info['cpu']=psutil.cpu_percent()
-    info['uptime']=time.time() - psutil.boot_time()    
+    info={
+      'ram':psutil.virtual_memory().percent,
+      'cpu':psutil.cpu_percent(),
+      'uptime':time.time() - psutil.boot_time(),
+      'disk_usage':psutil.disk_usage("/").free
+    } 
   embed=discord.Embed(
     title = "System Status", 
     description = "Bot Host System Status", 
@@ -132,11 +136,12 @@ async def systemstatus(ctx):
     embed.add_field(name="Uptime", value=str(round(info['uptime']/60/60,2))+" Hours", inline=True)
   embed.add_field(name="Memory", value=str(info['ram'])+"%", inline=True)
   embed.add_field(name="CPU", value=str(info['cpu'])+"%", inline=True)
-  
+  embed.add_field(name="Storage", value=str(round(info['disk_usage']/1024/1024/1024,0))+"GB free", inline=True)
+
   return await ctx.send(embed=embed)
 
 # @aiocron.crontab('* * * * *')
-@aiocron.crontab('20 11 * * 1-5')
+@aiocron.crontab('00 13 * * 1-5')
 @bot.command(name='spaceship', description="Compares performance of Spaceship over last two days")
 async def spaceshipCheck(ctx="DummyValueToStopError"):
   data = json.loads(requests.get("https://newwwie.net/datasets/UNIVERSE.json").text)

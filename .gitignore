@@ -2,3 +2,4 @@
 secrets.json
 .env
 env
+nohup.out

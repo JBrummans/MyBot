@@ -143,29 +143,32 @@ async def systemstatus(ctx):
 # @aiocron.crontab('* * * * *')
 @aiocron.crontab('00 13 * * 1-5')
 @bot.command(name='spaceship', description="Compares performance of Spaceship over last two days")
-async def spaceshipCheck(ctx="DummyValueToStopError"):
-  data = json.loads(requests.get("https://newwwie.net/datasets/UNIVERSE.json").text)
+async def spaceshipCheck(ctx=False):
+  CHECK_SPACESHIP = os.getenv("CHECK_SPACESHIP", 'False').lower() in ['true', '1']
+  print(CHECK_SPACESHIP)
+  if CHECK_SPACESHIP is True or ctx is not False:
+    data = json.loads(requests.get("https://newwwie.net/datasets/UNIVERSE.json").text)
 
-  length = len(data) -1
-  last = data[length]["aud_price"]
-  last2 = data[length-1]["aud_price"]
-  day = str(data[length]["date"])
-  day2 = str(data[length-1]["date"])
-  change = ((float(last) - float(last2))/float(last2)) * 100
-  rounded = round(change,2)
-  message = str("Change between " + day + " and " + day2 + " is " + str(rounded) + "%")
-  
-  embed=discord.Embed(
-    title = "Spaceship Value Change", 
-    description = message, 
-    color = discord.Color.green()
-  )
-  embed.add_field(name=day2, value=str(last2), inline=True)
-  embed.add_field(name=day, value=str(last), inline=True)
-  if change < 0:
-    embed.color =  discord.Color.red()
+    length = len(data) -1
+    last = data[length]["aud_price"]
+    last2 = data[length-1]["aud_price"]
+    day = str(data[length]["date"])
+    day2 = str(data[length-1]["date"])
+    change = ((float(last) - float(last2))/float(last2)) * 100
+    rounded = round(change,2)
+    message = str("Change between " + day + " and " + day2 + " is " + str(rounded) + "%")
+    
+    embed=discord.Embed(
+      title = "Spaceship Value Change", 
+      description = message, 
+      color = discord.Color.green()
+    )
+    embed.add_field(name=day2, value=str(last2), inline=True)
+    embed.add_field(name=day, value=str(last), inline=True)
+    if change < 0:
+      embed.color =  discord.Color.red()
 
-  user = await bot.fetch_user(owner_id)
-  await user.send(embed=embed)
+    user = await bot.fetch_user(owner_id)
+    await user.send(embed=embed)
 
 bot.run(os.getenv("TOKEN"))

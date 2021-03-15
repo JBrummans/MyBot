@@ -62,43 +62,34 @@ async def cog_command_error(ctx, error):
 
 @bot.event
 async def on_command_error(ctx, error):
-  if isinstance(error, CommandNotFound):
-    #There has to be a better way of doing this...
-    # commandRun = re.findall(r'"([^"]*)"', str(error))
-    # commandRun = commandRun[0]
-    
-    #Below command will list out all ctx attributes
-    # dir(ctx)
-
-    #The better way
-    commandRun = ctx.message.content.split(" ")[0][1:]
-    for command, value in command_list.items():
-      if str(command) == commandRun:
-        # print("match found "+ command)
-        # print(value)
-        output = subprocess.getoutput(value)
-        # print(output)
-        embed=discord.Embed(
-          title = "Command Run: '" + command + "'", 
-          description = output, 
-          color = discord.Color.green()
-        )
-        return await ctx.send(embed=embed)
-
-    # print("Did not match " + command)
-    embed=discord.Embed(
-      title = "No Command Found", 
-      description = "Did not match " + command + ". Commands include: " + str(command_list), 
-      color = discord.Color.red()
-    )
-    return await ctx.send(embed=embed)
-
+  # Handling any errors when calling a command
+  # if isinstance(error, CommandNotFound):
   embed=discord.Embed(
     title = "Oh snap! An error occured", 
     description = "The error was: " + str(error), 
     color = discord.Color.red()
   )
   return await ctx.send(embed=embed)
+
+@bot.command(name='shell', description="Run Shell commands from JSON")
+async def run_shell(ctx, message):
+  for command, value in command_list.items():
+    if str(command) == message:
+      output = subprocess.getoutput(value)
+      embed=discord.Embed(
+        title = "Command Run: '" + command + "'", 
+        description = output, 
+        color = discord.Color.green()
+      )
+      return await ctx.send(embed=embed)
+
+  embed=discord.Embed(
+    title = "No Shell command found", 
+    description = "Did not match " + command + ". Commands include: " + str(command_list), 
+    color = discord.Color.red()
+  )
+  return await ctx.send(embed=embed)
+
 
 @bot.command(name='test', description="Test DM command")
 async def dm_test(ctx):
@@ -145,7 +136,6 @@ async def systemstatus(ctx):
 @bot.command(name='spaceship', description="Compares performance of Spaceship over last two days")
 async def spaceshipCheck(ctx=False):
   CHECK_SPACESHIP = os.getenv("CHECK_SPACESHIP", 'False').lower() in ['true', '1']
-  print(CHECK_SPACESHIP)
   if CHECK_SPACESHIP is True or ctx is not False:
     data = json.loads(requests.get("https://newwwie.net/datasets/UNIVERSE.json").text)
 

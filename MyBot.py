@@ -14,8 +14,11 @@ from pretty_help import PrettyHelp
 import aiocron
 import urllib.request
 import requests
+import datetime
+import logging
 
 load_dotenv(dotenv_path=".env")
+logging.basicConfig(filename='mybot.log', level=logging.INFO, filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
 
 with open('commands.json') as command_json:
   command_list = json.load(command_json)
@@ -49,7 +52,7 @@ async def on_ready():
 """ Error Check """
 async def cog_command_error(ctx, error):
   # Handling any errors within commands
-  print(ctx.command.qualified_name)
+  logging.error(str(error))
   embed = discord.Embed(
       title=f"Error in { ctx.command.qualified_name }",
       colour=discord.Color.red(),
@@ -64,12 +67,18 @@ async def cog_command_error(ctx, error):
 async def on_command_error(ctx, error):
   # Handling any errors when calling a command
   # if isinstance(error, CommandNotFound):
+  logging.error(str(error))
   embed=discord.Embed(
     title = "Oh snap! An error occured", 
     description = "The error was: " + str(error), 
     color = discord.Color.red()
   )
   return await ctx.send(embed=embed)
+
+@bot.before_invoke
+async def command_logger(ctx):
+  #server = ctx.guild.name #Not required for MyBot
+  logging.info(str(ctx.author) + " ran the command $" + str(ctx.command))
 
 @bot.command(name='shell', description="Run Shell commands from JSON")
 async def run_shell(ctx, message):

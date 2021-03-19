@@ -18,11 +18,11 @@ import datetime
 import logging
 
 load_dotenv(dotenv_path=".env")
-logging.basicConfig(filename='mybot.log', level=logging.INFO, filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
+
+logging.basicConfig(filename=os.getenv("LOG_FILE"), level=logging.INFO, filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
 
 with open('commands.json') as command_json:
   command_list = json.load(command_json)
-  # print(command_list)
 
 bot = commands.Bot(
     command_prefix=os.getenv("PREFIX"),
@@ -45,9 +45,10 @@ async def on_ready():
     description = "MyBot has successfully started", 
     color = discord.Color.green()
   )
-  
+  logging.info("MyBot has successfully started")
   user = await bot.fetch_user(owner_id)
   await user.send(embed=embed)
+
 
 """ Error Check """
 async def cog_command_error(ctx, error):

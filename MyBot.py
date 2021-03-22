@@ -79,8 +79,8 @@ async def on_command_error(ctx, error):
 @bot.before_invoke
 async def command_logger(ctx):
   #server = ctx.guild.name #Not required for MyBot
-  logging.info(str(ctx.author) + " ran the command $" + str(ctx.command))
-
+  logging.info(str(ctx.author) + " ran the command "+ bot.command_prefix + str(ctx.command))
+  
 @bot.command(name='shell', description="Run Shell commands from JSON")
 async def run_shell(ctx, message):
   for command, value in command_list.items():
@@ -104,7 +104,7 @@ async def run_shell(ctx, message):
 @bot.command(name='test', description="Test DM command")
 async def dm_test(ctx):
   user = await bot.fetch_user(owner_id)
-  await user.send("Your message here")
+  await user.send("Test Message Here")
 
 @bot.command(name='myip', description="Returns public IP")
 async def my_ip(ctx):

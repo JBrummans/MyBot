@@ -16,6 +16,8 @@ import urllib.request
 import requests
 import datetime
 import logging
+import pandas as pd
+from bs4 import BeautifulSoup
 
 load_dotenv(dotenv_path=".env")
 
@@ -147,7 +149,7 @@ async def systemstatus(ctx):
 async def spaceshipCheck(ctx=False):
   CHECK_SPACESHIP = os.getenv("CHECK_SPACESHIP", 'False').lower() in ['true', '1']
   if CHECK_SPACESHIP is True or ctx is not False:
-    data = json.loads(requests.get("https://newwwie.net/datasets/UNIVERSE.json").text)
+    data = json.loads(requests.get("https://newwwie.net/datasets/UNIVERSE2.json").text)
 
     length = len(data) -1
     last = data[length]["aud_price"]
@@ -170,5 +172,66 @@ async def spaceshipCheck(ctx=False):
 
     user = await bot.fetch_user(owner_id)
     await user.send(embed=embed)
+
+# @aiocron.crontab('* * * * *')
+@aiocron.crontab('00 11 * * 1-7')
+@bot.command(name='covid', description="Gets current stats for Covid cases")
+async def covidCheck(ctx=False):
+  url = "https://covid-193.p.rapidapi.com/history"
+  XR_COVIDKEY = os.getenv("XR_COVIDKEY")
+  XR_COVIDAPI = os.getenv("XR_COVIDAPI")
+  COUNTRY = os.getenv("COUNTRY")
+  date = datetime.datetime.today().strftime('%Y-%m-%d')
+  querystring = {"country":COUNTRY,"day":date}
+
+  headers = {
+    'x-rapidapi-key': XR_COVIDKEY,
+    'x-rapidapi-host': XR_COVIDAPI
+    }
+
+  if XR_COVIDKEY is True or ctx is not False:
+    data = json.loads(requests.request("GET", url, headers=headers, params=querystring).text)
+
+    message = data['response'][0]['cases']['new']
+      
+    embed=discord.Embed(
+      title = "Covid Cases", 
+      description = "New cases today: " + message, 
+      color = discord.Color.green()
+    )
+
+    user = await bot.fetch_user(owner_id)
+    await user.send(embed=embed)
+
+# @aiocron.crontab('* * * * *')
+@aiocron.crontab('00 11 * * 1-7')
+@bot.command(name='vax', description="Gets current stats for Covid cases")
+async def vaccinationCheck(ctx=False):
+  URL = "https://covidlive.com.au/"
+  page = requests.get(URL)
+  soup = BeautifulSoup(page.content, "html.parser")
+  # results = soup.find(id="content")
+  table = soup.find("table",{"class":"VACCINATIONS-AGE-BAND"})
+  # table2 = soup.table["VACCINATIONS-AGE-BAND"]
+  # print(table)
+  # print(table.find_all('tr'))
+  results = {}
+  for row in table.find_all('tr')[1:]:
+      # print(row)
+      aux = row.find_all('td')
+      # print(aux)
+      results[aux[0].string] = {"first": aux[1].string, "second":aux[2].string}
+
+  embed=discord.Embed(
+    title = "Covid Vaccinations", 
+    description = "Vaccinations (first/seccond dose):", 
+    color = discord.Color.green()
+  )
+  embed.add_field(name="NSW", value=str(results["NSW"]["first"]+ "/" + results["NSW"]["second"]), inline=True)
+  embed.add_field(name="Australia", value=str(results["Australia"]["first"]+ "/" + results["Australia"]["second"]), inline=True)
+
+  user = await bot.fetch_user(owner_id)
+  await user.send(embed=embed)
+  # print(results["NSW"]["first"])
 
 bot.run(os.getenv("TOKEN"))
